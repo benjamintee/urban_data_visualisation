@@ -1,0 +1,12 @@
+/.quarto/
+**/*.quarto_ipynb
+*large/
+
+*.gzip
+*.feather
+*.geofeather
+*.parquet
+*.geoparquet
+*.txt
+*.xlsx
+.Rproj.user

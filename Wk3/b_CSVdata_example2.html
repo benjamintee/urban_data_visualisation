@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>D3 Load CSV Example</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+<!--Load the chart libraries. Dimple is built on D3, and you need to also add D3-->
+<script charset="utf-8" src="https://d3js.org/d3.v7.min.js"></script>
+
+    
+</head>
+
+<body>
+
+<div id="demo"></div>
+
+
+<script>
+
+    
+//The following statement loads the data from the CSV file, and then runs the function after the CSV is loaded. CityData is returned as an array of JavaScript objects containing the csv data
+
+      d3.csv("CityData_WUP2025_top20.csv").then(function(CityData) {
+            
+            console.log(CityData);
+            console.log(CityData[0]);
+          
+            var myData = CityData[0];    // Take the data for the second city in the array, Delhi
+          
+            console.log(myData["CityName"]);
+            console.log(myData.CityName);
+            console.log(myData.pop2020);
+                 
+        // You can also loop through JSON Objects with a for loop-
+        for (x in myData) {
+          document.getElementById("demo").innerHTML += "<p>" + x + ": " + myData[x] + "</p>";
+        }
+
+        // You can create a new array of one column of the CSV using the map method in JavaScript. This runs a function for every element in the array.
+
+        var cityNames = CityData.map(function (d) {
+        return d.Name;
+        });
+        console.log(cityNames);
+
+
+      });
+
+
+</script>
+
+</body>
+</html>

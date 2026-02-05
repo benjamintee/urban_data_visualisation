@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>World's Largest Urban Agglomerations Bar Chart</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+<!--Load Chart.JS and D3 to parse the CSV file-->
+<script charset="utf-8" src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+<style>
+        
+    #chartContainer {width: 900px; margin: auto; margin-top: 50px; }
+    #chartContainer p {margin-left: 120px; margin-bottom: 5px; margin-top: 0; padding: 0;}
+    #charttitle {font: bold 22px  Verdana, sans-serif;}
+        
+</style>
+</head>
+
+<body>
+
+<!--This is the div container for the chart-->
+
+<div id="chartContainer">
+    <p id="charttitle">World's Largest Urban Agglomerations 2050</p>
+    <p id="chartsubhead">Population data <a href="https://www.un.org/development/desa/pd/world-urbanization-prospects-2025">UN World Urbanization Prospects 2025</a>.</p>
+    <canvas id="myChart"></canvas>
+</div>
+
+
+
+<script>
+
+//The following statement loads the data from the CSV file, and then runs the function after the CSV is loaded. CityData is returned as an array containing the CSV data
+
+d3.csv("CityData_WUP2025_top20.csv").then(function(CityData) {
+            
+  const ctx = document.getElementById('myChart');
+
+  var cityNames = CityData.map(function (d) {
+  return d.Name;
+  });
+
+  var cityPop2050 = CityData.map(function (d) {
+  return d.pop2050;
+  });
+
+  console.log(cityNames);
+  console.log(cityPop2050);
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+    labels: cityNames,
+    datasets: [
+        {
+        data: cityPop2050 
+        }
+    ]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Population (millions)'
+          }
+        }
+      }
+    }
+  });
+
+});
+
+
+
+
+</script>
+
+</body>
+</html>

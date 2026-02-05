@@ -23,16 +23,16 @@
         <h1 id="title">House Price Paid Per Square Metre 2024</h1>
         <p>Price Paid, £GBP per m2, England & Wales 2024. Data source: <a href="https://data.london.gov.uk/dataset/house-price-per-square-metre-in-england-and-wales-epo9w/">Chi et al. UCL</a>, <a href="https://www.gov.uk/government/collections/price-paid-data">Land Registry</a>, Crown &copy;. Map Design: D A Smith. Data scale: local authority and MSOA.</p>
         	<table id="legendValues">
-                <tr><td class="colsq" style="background-color:#5e3c99;">&nbsp;</td><td class="value">&nbsp;0 - &pound;2,000</td></tr>
-                <tr><td class="colsq" style="background-color:#836db2;">&nbsp;</td><td class="value">&nbsp;&pound;2,000 - &pound;2,500</td></tr>
-                <tr><td class="colsq" style="background-color:#a99fcc;">&nbsp;</td><td class="value">&nbsp;&pound;2,500 - &pound;3,000</td></tr>
-                <tr><td class="colsq" style="background-color:#c9c4de;">&nbsp;</td><td class="value">&nbsp;&pound;3,000 - &pound;3,500</td></tr>
-                <tr><td class="colsq" style="background-color:#e8e6ef;">&nbsp;</td><td class="value">&nbsp;&pound;3,500 - &pound;4,000</td></tr>
-                <tr><td class="colsq" style="background-color:#f8e9d6;">&nbsp;</td><td class="value">&nbsp;&pound;4,000 - &pound;4,500</td></tr>
-                <tr><td class="colsq" style="background-color:#fbcd94;">&nbsp;</td><td class="value">&nbsp;&pound;4,500 - &pound;5,250</td></tr>
-                <tr><td class="colsq" style="background-color:#faae58;">&nbsp;</td><td class="value">&nbsp;&pound;5,250 - &pound;6,500</td></tr>
-                <tr><td class="colsq" style="background-color:#f0882d;">&nbsp;</td><td class="value">&nbsp;&pound;6,500 - &pound;8,500</td></tr>
-                <tr><td class="colsq" style="background-color:#e66101;">&nbsp;</td><td class="value">&nbsp;&pound;8,500 - &pound;22,000</td></tr>
+                <tr><td class="colsq" style="background-color:#5e3c99;">&nbsp;</td><td class="value">&nbsp;0 - 2,000</td></tr>
+                <tr><td class="colsq" style="background-color:#836db2;">&nbsp;</td><td class="value">&nbsp;2,000 - 2,500</td></tr>
+                <tr><td class="colsq" style="background-color:#a99fcc;">&nbsp;</td><td class="value">&nbsp;2,500 - 3,000</td></tr>
+                <tr><td class="colsq" style="background-color:#c9c4de;">&nbsp;</td><td class="value">&nbsp;3,000 - 3,500</td></tr>
+                <tr><td class="colsq" style="background-color:#e8e6ef;">&nbsp;</td><td class="value">&nbsp;3,500 - 4,000</td></tr>
+                <tr><td class="colsq" style="background-color:#f8e9d6;">&nbsp;</td><td class="value">&nbsp;4,000 - 4,500</td></tr>
+                <tr><td class="colsq" style="background-color:#fbcd94;">&nbsp;</td><td class="value">&nbsp;4,500 - 5,250</td></tr>
+                <tr><td class="colsq" style="background-color:#faae58;">&nbsp;</td><td class="value">&nbsp;5,250 - 6,500</td></tr>
+                <tr><td class="colsq" style="background-color:#f0882d;">&nbsp;</td><td class="value">&nbsp;6,500 - 8,500</td></tr>
+                <tr><td class="colsq" style="background-color:#e66101;">&nbsp;</td><td class="value">&nbsp;8,500 - 22,000</td></tr>
 	        </table>
         <h3 id="laname">Hover over a local authority</h3>
 	</div>
@@ -62,9 +62,8 @@ map.touchZoomRotate.disableRotation();
 
 map.on('load', function() {
 
-
-
-    map.addLayer({                  //Add the Local Authority fill layer. It is not visible (opacity 0) and is used only for the hover selection
+    //Add the Local Authority fill layer. It is not visible (opacity 0) and is used only for the hover selection
+    map.addLayer({                 
             id: 'LocalAuthorities',
             type: 'fill',
             source: {
@@ -81,14 +80,15 @@ map.on('load', function() {
                 'fill-opacity': 0
                 }
           });
-
-    map.addLayer({                  // Add the LA line highlight layer. This layer has a filter, which initially is empty.
+    
+    // Add the LA line highlight layer. This layer has a filter, which initially is empty.
+    map.addLayer({                  
             id: 'lahighlight',
             type: 'line',
             source: {
               type: 'vector',
               maxzoom: 8.5,
-              url: 'mapbox://duncan2001.961qqn17' // Your Mapbox tileset Map ID
+              url: 'mapbox://duncan2001.961qqn17' // Mapbox tileset Map ID
             },
             'source-layer': 'LADBSC_HPPSQ2024_1-a62ceq', // name of tilesets
             'layout': {
@@ -101,14 +101,14 @@ map.on('load', function() {
             filter: ['==','name','empty']
           });
 
-
-    map.addLayer({                  //Add the MSOA fill layer. It is not visible (opacity 0) and is used only as the basis of the hover selection
+    //Add the MSOA fill layer. It is not visible (opacity 0) and is used only as the basis of the hover selection
+    map.addLayer({                  
             id: 'MSOA',
             type: 'fill',
             source: {
               type: 'vector',
               minzoom: 8.5,  // This layer only appears above this zoom setting, switching between the local authority and MSOA layers
-              url: 'mapbox://duncan2001.3nr4p27w' // Your Mapbox tileset Map ID
+              url: 'mapbox://duncan2001.3nr4p27w' // Mapbox tileset Map ID
             },
             'source-layer': 'MSOA_HPPSQ2024_1-bi062w', // name of tilesets
             'layout': {
@@ -120,13 +120,14 @@ map.on('load', function() {
                 }
           });
 
-    map.addLayer({                  // Add the MSOA line highlight layer. This layer has a filter, which initially is empty.
+    // Add the MSOA line highlight layer. This layer has a filter, which initially is empty.
+    map.addLayer({                  
             id: 'MSOAhighlight',
             type: 'line',
             source: {
               type: 'vector',
               minzoom: 8.5,
-              url: 'mapbox://duncan2001.3nr4p27w' // Your Mapbox tileset Map ID
+              url: 'mapbox://duncan2001.3nr4p27w' // Mapbox tileset Map ID
             },
             'source-layer': 'MSOA_HPPSQ2024_1-bi062w', // name of tilesets
             'layout': {

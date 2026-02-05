@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domestic Energy Consumption across England & Wales</title>
+    
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background: #0b0b0b; }
+
+        /* Add a navigation bar in the header  */
+        .navbar {
+            display: flex; justify-content: flex-start; align-items: center;
+            background-color: #1a252f; color: white; padding: 0.5rem 1.2rem;
+            height: 40px; position: relative; z-index: 10;
+        }
+        .nav-title { font-weight: bold; font-size: 1.1rem; margin-right: 10px;}
+        .nav-tabs { display: flex; align-items: center;}
+        .nav-tabs a { color: white; text-decoration: none; margin-left: 30px; font-size: 14px; transition: color 0.3s; }
+        .nav-tabs a:hover { color: #bbfaf2; }
+        .nav-right {margin-left: auto;}
+        
+        /* Position the map and set the width to 100%  */
+        #map { position: absolute; top: 56px; bottom: 0; width: 100%; }
+
+        /* Set the size of the control panel for the tab  */
+        .controls {
+            position: absolute; top: 80px; left: 20px; width: 290px;
+            background: rgba(255, 255, 255, 0.95); padding: 20px; border-radius: 12px;
+            backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5;
+        }
+
+        /* Set the styling for the legend  */
+        .colsq { width: 18px; height: 12px; border-radius: 2px; }
+        .value { padding-left: 10px; height: 20px; color: #444; font-weight: 500; }
+
+        /* Add styles for the JS charts in the popup  */
+        .energy-popup {
+            width: 380px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .energy-popup h2 { font-size: 18px; margin: 0 0 5px 0; color: #000; }
+        .energy-popup .metric { font-size: 15px; margin-bottom: 15px; }
+
+        .chart-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .trend-container { height: 150px; width: 100%; margin-bottom: 20px; }
+        .stacked-container { height: 60px; width: 100%; margin-bottom: 10px; }
+
+        /* Style main popup content box */
+        .mapboxgl-popup-content {
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 15px;                  
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            
+        }
+        .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+            border-bottom-color: rgba(255, 255, 255, 0.95);
+        }
+        .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+            border-top-color: rgba(255, 255, 255, 0.95);
+        }
+        .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+            border-right-color: rgba(255, 255, 255, 0.95);
+        }
+        .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+            border-left-color: rgba(255, 255, 255, 0.95);
+        }
+        /* Style the close button to match the UI */
+        .mapboxgl-popup-close-button {
+            color: #666;
+            font-size: 20px;
+            padding: 5px 8px;
+            border-radius: 0 15px 0 0; 
+        }
+        .mapboxgl-popup-close-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: #000;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7); /* Dim the background */
+            backdrop-filter: blur(8px);    /* The blur effect */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;                 
+            transition: opacity 0.5s ease;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            color: white;
+            box-shadow: 0 4px 18px 0 rgba(199, 221, 200, 0.27);
+            text-align: left;
+        }
+
+        .glass-card h1 { margin-top: 0; font-weight: 700; }
+        .subtitle { font-size: 1.2rem; color: #0ed186; margin-top: -10px; margin-bottom: 25px; }
+
+        .instruction-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instruction-section li {
+            margin-bottom: 12px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .instruction-section li::before {
+            content: "-";
+            position: absolute;
+            left: 0;
+            color: #ffffff;
+        }
+
+        .explore-btn {
+            background: #0ed186;
+            color: #031525;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .explore-btn:hover {
+            transform: scale(1.05);
+        }
+        
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-title">Domestic Energy Consumption across England & Wales</div>
+    <div class="nav-tabs">
+        <a href="#">About</a>
+        <a href="#">Map</a>
+    </div>
+    <div class="nav-right">
+        <a href="https://github.com/benjamintee/CASA_UDV_Assessment" target="_blank" style="color:white;"><i class="fab fa-github"></i></a>
+    </div>
+</nav>
+
+<div class="controls">
+    <h2 id="ui-title" style="margin:0; font-size: 22px;">Gas Consumption</h2>
+    <p style="font-size: 14px; margin: 4px 0 12px 0; color: #666; font-style: italic; line-height: 1.2;">
+        How does annual household energy consumption vary across England & Wales?
+    </p>
+    
+    <div style="font-size: 12px; line-height: 1.5; margin-bottom: 15px; color: #444; border-left: 2px solid #ddd; padding-left: 8px;">
+        Period: Annually, 2015 – 2024<br>
+        Scale: Local Authority & MSOA <br>
+        Data: <a href="https://www.data.gov.uk/dataset/ed629618-7b69-465d-8e0a-0546b1809fc7/electricity_and_gas_consumption_at_middle_layer_super_output_area_mlsoa_and_intermediate_geography_z" 
+                        target="_blank"> Department of Energy Security & Net Zero
+                    </a>, <a href = "https://digimap.edina.ac.uk/help/our-maps-and-data/os_products/"> Meridian 2 (Digimap)</a>, <a href = "https://epc.opendatacommunities.org"> EPC Register (DLUHC)</a><br>
+        Map design: Adapted from D.A Smith, utilising dasymetric mapping where data is cropped to urban areas.
+    </div>
+
+    <label style="font-size:14px;"><strong>Select Fuel Type:</strong></label>
+    <select id="fuelSelect" style="width: 100%; margin: 5px 0 15px 0; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <option value="gas">Gas</option>
+        <option value="elec">Electricity</option>
+    </select>
+
+    <label style="font-size:14px;"><strong>Select Year: <span id="yearLabel" style="color:#1b7f6b; font-size: 16px; font-weight:bold;">2024</span></strong></label>
+    <input id="yearSlider" type="range" min="2015" max="2024" value="2024" style="width: 100%; margin: 10px 0;">
+    <div id="legendTitle" style="font-size: 14px; font-weight: bold; margin: 15px 0 5px 0; color: #333;"> Mean annual household gas consumption <br>(kWh per meter) </div>
+    <table id="legendValues" style="width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 13px;"></table>
+    <h4 id="laname">Hover over a local authority</h4>
+</div>
+
+<div id="about-overlay" class="overlay">
+    <div class="glass-card">
+        <h1>Domestic Energy Consumption</h1>
+        <p class="subtitle">England & Wales, 2015 – 2024</p>
+        
+        <div class="content-section">
+            <p>This visualization provides an interactive map on the spatial distribution of domestic energy consumption across England and Wales. By integrating average gas and electricity consumption data from the Department for Energy Security and Net Zero (DESNZ) with Energy Performance Certificate (EPC) distributions, this visualisation provides insight into possible consumption hotspots and energy efficiency standards in urban settlements.</p>
+        </div>
+
+        <div class="instruction-section">
+            <h3>How to use:</h3>
+            <ul>
+                <li><strong>Select Fuel:</strong> Choose "Gas" or "Electricity" to view specific consumption trends.</li>
+                <li><strong>Explore Time:</strong> Use the slider to see how the energy crisis impacted consumption from 2015 to 2024.</li>
+                <li><strong>Deep Dive:</strong> Click any area to view historical trends and local EPC distributions compared to national averages.</li>
+            </ul>
+        </div>
+
+        <button onclick="closeAbout()" class="explore-btn">Start Exploring</button>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoidGVlY2hpbm1pbmJlbiIsImEiOiJjbWtmcTJldHgwMWg2M2lzYnV2cnUzN2twIn0.6iawA9W8OLSwrcV_ZHG41g';
+
+    // 1. GLOBAL UI FUNCTIONS (Keep these at the top, outside any blocks)
+    function closeAbout() {
+        const overlay = document.getElementById('about-overlay');
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 500);
+    }
+
+    function openAbout() {
+        const overlay = document.getElementById('about-overlay');
+        overlay.style.opacity = '0'; 
+        overlay.style.display = 'flex';
+        setTimeout(() => {
+            overlay.style.opacity = '1';
+        }, 10);
+    }
+
+    // 2. NAVBAR LISTENERS (Outside the map block so they work immediately)
+    document.querySelectorAll('.nav-tabs a').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (e.target.innerText === 'About') openAbout();
+            if (e.target.innerText === 'Map') closeAbout();
+        });
+    });
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [-1.1743, 52.3555],
+        zoom: 7
+    });
+
+    map.addControl(new mapboxgl.NavigationControl());
+    map.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
+
+    const GAS_COLORS = ['#20B2AA', '#3DD9C0', '#60E6C8', '#8FFFD0', '#D4FCE4', '#FDF2D0', '#FFD280', '#FFA84D', '#E67E22', '#C35817']
+    //['#1b7f6b', '#3a9d8f', '#73c2a6', '#b8e3c1', '#e6f5d0', '#f6e8c3', '#dfc27d', '#bf812d', '#B5651D', '#8B4513'];
+    const GAS_BREAKS = [9500, 10000, 10500, 11000, 11500, 12000, 12750, 13500, 14500, 35000];
+
+    const ELEC_COLORS = ['#3A82F6', '#5FA2ED', '#85C1F4', '#ABDBFA', '#D0E8F5', '#FFE0B8', '#FFB366', '#FF854D', '#F24452', '#D91E36']
+    //['#1f4fa3', '#2f6db3', '#4a90c2', '#74add1', '#bcdff1', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#7f0825'];
+    const ELEC_BREAKS = [2750, 2900, 3000, 3100, 3200, 3300, 3450, 3650, 3900, 11000];
+
+    function getExpression(fuel, year) {
+        const column = `${fuel}_${year}_mean`;
+        const colors = fuel === 'gas' ? GAS_COLORS : ELEC_COLORS;
+        const breaks = fuel === 'gas' ? GAS_BREAKS : ELEC_BREAKS;
+        let expression = ['step', ['get', column], colors[0]];
+        for (let i = 0; i < breaks.length - 1; i++) {
+            expression.push(breaks[i], colors[i + 1]);
+        }
+        return expression;
+    }
+
+    map.on('style.load', () => {
+
+        //Customise text for city / state / settlement labels to improve visibility 
+        const labelLayers = [
+            'settlement-label',
+            'settlement-major-label', 
+            'settlement-minor-label',
+            'state-label',
+            'country-label'
+        ];
+        
+        labelLayers.forEach(layerId => {
+            if (map.getLayer(layerId)) {
+                map.setPaintProperty(layerId, 'text-color', '#FFFFFF'); // White text
+                map.setPaintProperty(layerId, 'text-halo-color', '#000000'); // Black halo
+                map.setPaintProperty(layerId, 'text-halo-width', 1.7); // Thick halo
+                map.setPaintProperty(layerId, 'text-halo-blur', 0.2); // Slight 
+                
+            }
+        });
+
+        // Hide non-essential layers 
+        const layersToHide = [
+        'poi-label',
+        'water-point-label',
+        'water-line-label',
+        'natural-point-label',
+        'natural-line-label',
+        'waterway-label',
+        'road-label-simple'
+        ];
+
+        layersToHide.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+            map.setLayoutProperty(layerId, 'visibility', 'none');
+        }
+        });
+
+        // Configure zoom-level for city labels 
+        map.setLayerZoomRange('settlement-major-label', 4, 22); // Major cities visible from zoom 4
+        map.setLayerZoomRange('settlement-minor-label', 5, 22); // Minor cities from zoom 6
+        map.setLayerZoomRange('settlement-subdivision-label', 8, 22); // Subdivisions from zoom 8
+
+        map.setPaintProperty('road-simple', 'line-color', '#545454');
+        map.setPaintProperty('water', 'fill-color', '#1c1c1c');
+               
+        map.addSource('la_source', { type: 'vector', url: 'mapbox://teechinminben.dbcarm48' });
+        map.addSource('msoa_source', { type: 'vector', url: 'mapbox://teechinminben.48642fby' });
+        
+        const layers = [
+            { id: 'gas-la', src: 'la_source', lyr: 'la_final_cropped-6tdh6s', max: 8.5, vis: 'visible', fuel: 'gas' },
+            { id: 'gas-msoa', src: 'msoa_source', lyr: 'msoa_final_cropped-dm27xu', min: 8.5, vis: 'visible', fuel: 'gas' },
+            { id: 'elec-la', src: 'la_source', lyr: 'la_final_cropped-6tdh6s', max: 8.5, vis: 'none', fuel: 'elec' },
+            { id: 'elec-msoa', src: 'msoa_source', lyr: 'msoa_final_cropped-dm27xu', min: 8.5, vis: 'none', fuel: 'elec' }
+        ];
+
+        layers.forEach(l => {
+            map.addLayer({
+                'id': l.id,
+                'type': 'fill',
+                'source': l.src,
+                'source-layer': l.lyr,
+                'minzoom': l.min || 0,
+                'maxzoom': l.max || 22,
+                'layout': { 'visibility': l.vis },
+                'paint': { 
+                    'fill-color': getExpression(l.fuel, 2024),
+                    'fill-opacity': 1.0,
+                    'fill-outline-color': 'rgba(0,0,0,0)'
+                }
+            }, 'waterway-label'); // Add before labels so your data appears below text
+        });
+
+        //Add the Local Authority fill layer. It is not visible (opacity 0) and is used only for the hover selection
+        map.addLayer({                 
+                id: 'LocalAuthorities',
+                type: 'fill',
+                source: {
+                type: 'vector',
+                maxzoom: 8.5, // The map data scale switches from local authority to MSOA according to the zoom level set here
+                url: 'mapbox://teechinminben.daq11onr' // Your Mapbox tileset Map ID
+                },
+                'source-layer': 'lad_final-9vdf5n', // name of tilesets
+                'slot': 'top', 
+                'layout': {
+                    'visibility': 'visible'
+                },
+                paint: {
+                    'fill-color': '#fff',
+                    'fill-opacity': 0
+                    }
+            });
+
+        // Add the LA line highlight layer. This layer has a filter, which initially is empty.
+        map.addLayer({                  
+                id: 'lahighlight',
+                type: 'line',
+                source: {
+                type: 'vector',
+                maxzoom: 8.5,
+                url: 'mapbox://teechinminben.daq11onr' // Mapbox tileset Map ID
+                },
+                'source-layer': 'lad_final-9vdf5n', // name of tilesets
+                'slot': 'top', 
+                'layout': {
+                    'visibility': 'visible'
+                },
+                paint: {
+                    'line-color': '#F5F5F7',
+                    'line-width': 3, 
+                    'line-emissive-strength': 1.0,
+                    },
+                filter: ['==','name','empty']
+            });
+
+        //Add the MSOA fill layer. It is not visible (opacity 0) and is used only as the basis of the hover selection
+        map.addLayer({                  
+                id: 'MSOA',
+                type: 'fill',
+                source: {
+                type: 'vector',
+                minzoom: 8.5,  // This layer only appears above this zoom setting, switching between the local authority and MSOA layers
+                url: 'mapbox://teechinminben.5ai2iyl7' // Mapbox tileset Map ID
+                },
+                'source-layer': 'msoa_final-b0stfy', // name of tilesets
+                'slot': 'top', 
+                'layout': {
+                    'visibility': 'visible'
+                },
+                paint: {
+                    'fill-color': '#fff',
+                    'fill-opacity': 0
+                    }
+            });
+
+        // Add the MSOA line highlight layer. This layer has a filter, which initially is empty.
+        map.addLayer({                  
+                id: 'MSOAhighlight',
+                type: 'line',
+                source: {
+                type: 'vector',
+                minzoom: 8.5,
+                url: 'mapbox://teechinminben.5ai2iyl7' // Mapbox tileset Map ID
+                },
+                'source-layer': 'msoa_final-b0stfy', // name of tilesets
+                'slot': 'top', 
+                'layout': {
+                    'visibility': 'visible'
+                },
+                paint: {
+                    'line-color': '#F5F5F7',
+                    'line-width': 3, 
+                    'line-emissive-strength': 1.0,
+                    },
+                filter: ['==','name','empty']
+            });
+
+        function updateLegend(fuel) {
+            const legendTable = document.getElementById('legendValues');
+            const colors = fuel === 'gas' ? GAS_COLORS : ELEC_COLORS;
+            const breaks = fuel === 'gas' ? GAS_BREAKS : ELEC_BREAKS;
+            
+            // Define specific min/max anchors
+            const minVal = fuel === 'gas' ? 5700 : 2100;
+            const maxVal = fuel === 'gas' ? 25000 : 7500;
+
+            legendTitle.innerHTML = fuel === 'gas' 
+                ? 'Mean household gas consumption <br>(kWh per meter)' 
+                : 'Mean household electricity consumption <br>(kWh per meter)';
+
+            legendTable.innerHTML = ''; 
+
+            colors.forEach((color, i) => {
+                const row = document.createElement('tr');
+                let label = '';
+
+                if (i === 0) {
+                    // First row: Min Value to First Break
+                    label = `${minVal.toLocaleString()} - ${breaks[i].toLocaleString()}`;
+                } else if (i === colors.length - 1) {
+                    // Last row: Previous Break to Max Value
+                    label = `${breaks[i-1].toLocaleString()} - ${maxVal.toLocaleString()}`;
+                } else {
+                    // Middle rows: Previous Break to Current Break
+                    label = `${breaks[i-1].toLocaleString()} - ${breaks[i].toLocaleString()}`;
+                }
+
+                row.innerHTML = `
+                    <td class="colsq" style="background-color:${color}; border: 0.5px solid rgba(0,0,0,0.1);"></td>
+                    <td class="value">${label}</td>
+                `;
+                legendTable.appendChild(row);
+            });
+        }
+
+        function updateMap() {
+            const year = document.getElementById('yearSlider').value;
+            const fuel = document.getElementById('fuelSelect').value;
+
+            map.setLayoutProperty('gas-la', 'visibility', fuel === 'gas' ? 'visible' : 'none');
+            map.setLayoutProperty('gas-msoa', 'visibility', fuel === 'gas' ? 'visible' : 'none');
+            map.setLayoutProperty('elec-la', 'visibility', fuel === 'elec' ? 'visible' : 'none');
+            map.setLayoutProperty('elec-msoa', 'visibility', fuel === 'elec' ? 'visible' : 'none');
+
+            // Apply coloring based on the current fuel and year selection
+            const activeLayers = fuel === 'gas' ? ['gas-la', 'gas-msoa'] : ['elec-la', 'elec-msoa'];
+            activeLayers.forEach(id => {
+                map.setPaintProperty(id, 'fill-color', getExpression(fuel, year));
+            });
+
+            const titleMap = {
+                'gas': 'Gas',
+                'elec': 'Electricity'
+            };
+
+            document.getElementById('ui-title').innerText = `${titleMap[fuel]} Consumption`;
+            document.getElementById('yearLabel').innerText = year;
+            document.getElementById('yearLabel').style.color = fuel === 'gas' ? '#1b7f6b' : '#1f4fa3';
+            updateLegend(fuel); 
+        }
+
+        map.on('mousemove', function(e) {
+            // 1. Get current values from UI
+            const year = document.getElementById('yearSlider').value;
+            const fuel = document.getElementById('fuelSelect').value; // 'gas' or 'elec'
+            
+            // 2. Construct property key: format is fuel_year (e.g., "gas_2023")
+            const propKey = `${fuel}_${year}_mean`; 
+
+            // 3. Query the specific layers you mentioned
+            // Using the IDs: 'LocalAuthorities' and 'msoa'
+            var la = map.queryRenderedFeatures(e.point, { layers: ['LocalAuthorities'] });
+            var msoal = map.queryRenderedFeatures(e.point, { layers: ['MSOA'] });
+
+            function numberWithCommas(x) {
+                if (x === undefined || x === null || isNaN(x)) return "No data";
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+
+            // --- LOCAL AUTHORITY HOVER ---
+            if (la.length > 0) {
+                // Use the new highlight layer ID: 'lahighlight'
+                map.setFilter('lahighlight', ['==', 'LAD25NM', la[0].properties.LAD25NM]);
+                // Ensure MSOA highlight is cleared when hovering LA
+                map.setFilter('MSOAhighlight', ['==', 'MSOA21NM', 'null']);
+                
+                const name = la[0].properties.LAD25NM;
+                const val = la[0].properties[propKey];
+                const fuelLabel = fuel === 'gas' ? 'Gas' : 'Electricity';
+                const activeColor = fuel === 'gas' ? '#1b7f6b' : '#1f4fa3'; // Determine the color based on the current fuel selection
+
+                document.getElementById('laname').innerHTML = `
+                    LA: <strong style="color: ${activeColor};">${name}</strong> <br />
+                    ${fuelLabel} Consumption: <strong style="color: ${activeColor};">${numberWithCommas(Math.round(val))} kWh </strong><br />
+                `;
+            } 
+
+            // --- MSOA HOVER ---
+            else if (msoal.length > 0) {
+                // Use the new highlight layer ID: 'msoa_highlight'
+                map.setFilter('MSOAhighlight', ['==', 'MSOA21NM', msoal[0].properties.MSOA21NM]);
+                // Ensure LA highlight is cleared when hovering MSOA
+                map.setFilter('lahighlight', ['==', 'LAD25NM', 'null']);
+                
+                const name2 = msoal[0].properties.MSOA21NM;
+                const val2 = msoal[0].properties[propKey];
+                const fuelLabel2 = fuel === 'gas' ? 'Gas' : 'Electricity';
+                const activeColor2 = fuel === 'gas' ? '#1b7f6b' : '#1f4fa3'; // Determine the color based on the current fuel selection
+
+                document.getElementById('laname').innerHTML = `
+                    MSOA: <strong style="color: ${activeColor2};">${name2}</strong> <br />
+                    ${fuelLabel2} Consumption: <strong style="color: ${activeColor2};">${numberWithCommas(Math.round(val2))} kWh </strong><br />
+                `;
+            } 
+
+            // --- RESET ---
+            else {
+                map.setFilter('lahighlight', ['==', 'LAD25NM', 'null']);
+                map.setFilter('msoa_highlight', ['==', 'MSOA21NM', 'null']);
+                document.getElementById('laname').innerHTML = "Hover over an area";
+            }
+        });
+        
+        // Set up point and click function 
+        map.on('click', function(e) {
+            const year = document.getElementById('yearSlider').value;
+            const fuel = document.getElementById('fuelSelect').value;
+            const currentValKey = `${fuel}_${year}_mean`;
+
+            const features = map.queryRenderedFeatures(e.point, {
+                layers: ['LocalAuthorities', 'MSOA']
+            });
+
+            if (!features.length) return;
+
+            const props = features[0].properties;
+            const name = props.LAD25NM || props.MSOA21NM; // Check for LA or MSOA name
+            const currentVal = props[currentValKey] ? Math.round(props[currentValKey]).toLocaleString() : 'N/A';
+            const labelName = features[0].layer.id === 'LocalAuthorities' ? 'LA' : 'MSOA';
+
+            // 1. Gather Historical Trend Data (2015-2024)
+            const trendYears = Array.from({length: 10}, (_, i) => 2015 + i);
+            const trendValues = trendYears.map(y => props[`${fuel}_${y}_mean`] || 0);
+
+            // 2. Gather EPC Data (2015-2024)
+            const areaEPC = [
+                Math.round(parseFloat(props.share_epc_AC) * 100) || 0,
+                Math.round(parseFloat(props.share_epc_D) * 100) || 0,
+                Math.round(parseFloat(props.share_epc_EG) * 100) || 0
+            ];
+
+            // Round the national values to the nearest whole number
+            const nationalEPC = [55, 34, 11];
+
+            const html = `
+                <div class="energy-popup" style="color: #333;">
+                    <h2 style="margin: 0 0 5px 0; font-size: 20px;">${name}</h2>
+                    <div class="metric" style="font-size: 14px; margin-bottom: 10px;">
+                        <strong>${fuel.charAt(0).toUpperCase() + fuel.slice(1)} Consumption (${year}):</strong> 
+                        <span style="color: ${fuel === 'gas' ? '#1b7f6b' : '#03a9f4'}; font-weight: bold;">
+                            ${currentVal} kWh
+                        </span>
+                    </div>
+                    
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;" />
+
+                    <div class="chart-title" style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+                        ${fuel.charAt(0).toUpperCase() + fuel.slice(1)} Consumption Trend (2015-2024)
+                    </div>
+                    <div class="trend-container" style="height: 150px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;" />
+
+                    <div class="chart-title" style="font-size: 14px; font-weight: bold;">Energy Performance Certificate Ratings (2018-2024)</div>
+                    <div class="chart-subtitle" style="font-size: 12px; color: #666; margin-bottom: 8px; font-style: italic;">
+                        Area EPC Rating vs National Average
+                    </div>
+                    
+                    <div class="combined-stacked-container" style="height: 120px;">
+                        <canvas id="epcComparisonChart"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            map.flyTo({
+                center: e.lngLat,
+                offset: [0, 100], 
+                essential: true,
+                speed: 0.5,       // Adjust the speed of the fly through
+                curve: 1,         // Controls the "zoom out" effect (1 is a flatter, smoother pan)
+                easing: (t) => t  // Linear easing makes it feel consistent throughout the move
+            });
+
+            new mapboxgl.Popup({ maxWidth: '420px', focusAfterOpen: false })
+                .setLngLat(e.lngLat)
+                .setHTML(html)
+                .addTo(map);
+            
+            // Render charts after popup is added to DOM
+            setTimeout(() => {
+                renderTrendLine(trendValues, trendYears, fuel);
+                // Pass both data arrays and the specific label to one chart
+                renderComparisonChart('epcComparisonChart', areaEPC, nationalEPC, labelName);
+            }, 150);
+        });
+
+        // Function for Historical Consumtpion Trend Line
+        function renderTrendLine(data, labels, fuel) {
+            new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        borderColor: fuel === 'gas' ? '#ff9800' : '#03a9f4',
+                        backgroundColor: fuel === 'gas' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(3, 169, 244, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: false, ticks: { font: { size: 10 } } } }
+                }
+            });
+        }
+
+        // Function for the Horizontal Stacked EPC Bars 
+        function renderComparisonChart(canvasId, areaData, nationalData, areaLabel) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                plugins: [ChartDataLabels],
+                data: {
+                    labels: [areaLabel, 'National'], // Y-axis labels
+                    datasets: [
+                        {   label: '% A-C',
+                            data: [areaData[0], nationalData[0]],
+                            backgroundColor: '#2e7d32' // Green
+                        },
+                        {   label: '% D',
+                            data: [areaData[1], nationalData[1]],
+                            backgroundColor: '#fbc02d' // Yellow
+                        },
+                        {   label: '% E-G',
+                            data: [areaData[2], nationalData[2]],
+                            backgroundColor: '#c62828' // Red
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, display: false, max: 100 },
+                        y: { 
+                            stacked: true, 
+                            grid: { display: false },
+                            ticks: { font: { size: 13, weight: 'bold' } } 
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 12 },
+                                padding: 10
+                            }
+                        },
+                        datalabels: {
+                            color: '#fff',
+                            font: { size: 15, weight: 'bold' },
+                            formatter: (val) => val > 10 ? Math.round(val) + '%' : ''
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize!
+        updateLegend('gas');
+        document.getElementById('yearSlider').addEventListener('input', updateMap);
+        document.getElementById('fuelSelect').addEventListener('change', updateMap);
+    });
+</script>
+</body>
+</html>

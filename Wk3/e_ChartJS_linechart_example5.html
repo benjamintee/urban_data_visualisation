@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>World's Largest Urban Agglomerations Line Chart</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+<!--Load Chart.JS and D3 to parse the CSV file-->
+<script charset="utf-8" src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hw-chartjs-plugin-colorschemes@0.5.4/dist/chartjs-plugin-colorschemes.min.js"></script>
+    
+<style>
+        
+    #chartContainer {width: 900px; margin: auto; margin-top: 50px; }
+    #chartContainer p {margin-left: 120px; margin-bottom: 5px; margin-top: 0; padding: 0;}
+    #charttitle {font: bold 22px  Verdana, sans-serif;}
+        
+</style>
+</head>
+
+<body>
+
+<!--This is the div container for the chart-->
+
+<div id="chartContainer">
+    <p id="charttitle">World's Largest Urban Agglomerations</p>
+    <p id="chartsubhead">Population data <a href="https://www.un.org/development/desa/pd/world-urbanization-prospects-2025">UN World Urbanization Prospects 2025</a>.</p>
+    <canvas id="myChart"></canvas>
+</div>
+
+
+
+<script>
+
+//The following statement loads the data from the CSV file, and then runs the function after the CSV is loaded. CityData is returned as an array containing the CSV data
+
+d3.csv("CityData_WUP2025_top20.csv").then(function(CityArray) {
+            
+  const ctx = document.getElementById('myChart');
+
+  var CityDataIndex;
+
+  var chartData = [];
+      
+  for (let CityDataIndex=0; CityDataIndex < 7; CityDataIndex++) {
+      var CityData = CityArray[CityDataIndex];
+      var CityName = CityData.Name;
+      var PopulationData = [CityData.pop1980,CityData.pop1990,CityData.pop2000,CityData.pop2010,CityData.pop2020,CityData.pop2030,CityData.pop2040,CityData.pop2050];
+      chartData.push(
+        { "label": CityName,"data": PopulationData }
+      )
+  }
+
+  console.log(chartData);
+
+  var labels = ["1980","1990","2000","2010","2020","2030","2040","2050"];
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels : labels,
+      datasets: chartData
+      },
+    options: {
+      plugins: {
+        colorschemes: {
+          scheme: 'brewer.SetThree8'
+        },
+        legend: {
+            position: 'right'
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Population (millions)'
+          }
+        }
+      }
+    }
+  });
+
+});
+
+
+</script>
+
+</body>
+</html>

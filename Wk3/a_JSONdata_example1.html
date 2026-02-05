@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>JSON Data Example</title>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    
+</head>
+
+<body>
+
+<div id="demo"></div>
+
+
+<script>
+
+ 
+       // Data in JavaScript is stored as objects described using JavaScript Object Notation, or JSON. JSON syntax is made up of name and value pairs, like the example below-
+
+        var myJSON = {"name":"Saturn","type":"gas giant","position":6};
+
+        // You can access the values in JSON Objects using dot notation or by putting the name in square brackets and quotes-
+        console.log(myJSON.name);
+        console.log(myJSON["type"]);
+
+        // You can also loop through JSON Objects with a for loop-
+        for (x in myJSON) {
+          document.getElementById("demo").innerHTML += "<p>" + x + ": " + myJSON[x] + "</p>";
+        }
+
+
+        // More complicated JSON datasets can include nested JSON objects, such as the example below-
+
+        var JSONsolarSystem = {
+            "name":"Solar System",
+            "planets": {
+                "planet3": {"name":"Earth","type":"habitable","position":3,"moons":1},
+                "planet5": {"name":"Jupiter","type":"gas giant","position":5,"moons":79},
+                "planet6": {"name":"Saturn","type":"gas giant","position":6,"moons":82}
+                }
+            }    
+
+        console.log(JSONsolarSystem);
+
+        console.log(JSONsolarSystem.planets.planet5);
+    
+
+</script>
+
+</body>
+</html>
